@@ -29,10 +29,11 @@ export async function verifyAuthorizationToken (req, res) {
 export async function getAccounts (req, res) {
     const accounts = await db.account.findMany({ where: { userId: req.user.id }, select: { id: true } });
 
-    if (!accounts) return res.json({ message: "No accounts linked" });
+    if (!accounts) return res.status(404).json({ message: "No accounts linked" });
 
     try {
         const accountsFromMono = await Promise.all(accounts.map(({ id }) => monoAPI.get(`/accounts/${id}`)));
+
         const sanitizedAccountsFromMono = accountsFromMono.map(({ data }) => {
             const { _id, bvn, ...otherAccountDetails } = data.account;
             return {
@@ -40,8 +41,24 @@ export async function getAccounts (req, res) {
                 meta: data.meta
             }
         });
+
         res.json({ message: "Accounts retrieved successfully", data: sanitizedAccountsFromMono });
     } catch (error) {
         res.status(500).json({ message: "Could not fetch accounts" });
+    }
+}
+
+export async function unlinkAccount (req, res) {
+    const account = await db.account.findUnique({ where: { id: req.params.id } });
+
+    if (!account) return res.status(404).json({ message: 'Account does not exist' });
+
+    try {
+        await monoAPI.post(`/accounts/${req.params.id}/unlink`);
+        await db.account.delete({ where: { id: req.params.id } });
+
+        res.json({ message: 'Account unlinked' });
+    } catch (error) {
+        res.status(500).json({ message: "could not unlink account" })
     }
 }

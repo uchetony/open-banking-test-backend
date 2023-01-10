@@ -11,11 +11,11 @@ const monoAPI = axios.create({
 })
 
 export async function getAccountTransactions (req, res) {
+    const account = await db.account.findUnique({ where: { id: req.params.id } });
+
+    if (!account) return res.status(404).json({ message: 'Account does not exist' });
+
     try {
-        const account = await db.account.findUnique({ where: { id: req.params.id } });
-
-        if (!account) return res.status(400).json({ message: 'Account not linked' });
-
         const { data: accountTransactionsData } = await monoAPI.get(`/accounts/${req.params.id}/transactions`);
 
         res.json({ message: "Transactions fetched", data: accountTransactionsData.data });
