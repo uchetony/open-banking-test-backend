@@ -37,6 +37,7 @@ export async function getAccounts (req, res) {
         const sanitizedAccountsFromMono = accountsFromMono.map(({ data }) => {
             const { _id, bvn, ...otherAccountDetails } = data.account;
             return {
+                id: _id,
                 ...otherAccountDetails,
                 meta: data.meta
             }
